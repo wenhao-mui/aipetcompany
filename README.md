@@ -27,7 +27,7 @@ The system has three layers. The backend holds the truth; the office is only a r
 
 ```mermaid
 flowchart LR
-  F[Founder] -->|HTTP + WebSocket| WEB[Web office<br/>React + PixiJS]
+  F[Founder] -->|HTTP + WebSocket| WEB[3D web office<br/>React + Three.js]
   WEB <-->|REST + WebSocket events| API[NestJS backend]
   API <--> DB[(PostgreSQL)]
   API <--> Q[(Redis / BullMQ)]
@@ -38,7 +38,7 @@ flowchart LR
 
 1. **Agents.** Each agent runs as a worker session: an LLM call loop with the agent's role prompt, memory, and tool permissions. Agents can be built in (run by the backend's agent runner) or external (any MCP-compatible agent that connects to the office).
 2. **Backend (NestJS).** The coordination server: agent registry, task board, messages between agents, approvals, memory, and an event log. It is also exposed as an **MCP server**, so agents use tools like `claim_task`, `send_message`, `report_status`, and `request_approval`.
-3. **Office frontend.** A web app that subscribes to backend events over WebSockets and animates them. Each event (task claimed, tool called, approval requested, task done) maps to a character action.
+3. **Office frontend.** A 3D web app built with Three.js through React Three Fiber. It shows the office from a fixed isometric camera (zoom and pan allowed) with low-poly rigged characters. It subscribes to backend events over WebSockets and animates them: each event (task claimed, tool called, approval requested, task done) maps to a character action such as walking to a desk, typing, meeting, or showing a bubble.
 
 ## Tech stack
 
@@ -50,7 +50,10 @@ flowchart LR
 | Realtime | NestJS WebSocket gateway (Socket.IO) |
 | Agent protocol | Model Context Protocol (MCP), `@modelcontextprotocol/sdk` |
 | LLMs | Pluggable providers (OpenAI, Anthropic, Gemini, xAI, local via Ollama) |
-| Frontend | React, Vite, PixiJS for the office, Tailwind for the UI |
+| Frontend | React and Vite, with Tailwind for the founder UI |
+| 3D office | Three.js via React Three Fiber, `@react-three/drei` helpers, Zustand for office state |
+| 3D assets | Low-poly GLB models; rigged characters with idle, walk, type, and talk animations (for example from Mixamo) |
+| Pathfinding | Grid or navmesh pathfinding on the office floor (for example `three-pathfinding`) |
 | Auth | JWT for the founder; per-agent API tokens for MCP access |
 | Monorepo | pnpm workspaces with Turborepo |
 
@@ -85,7 +88,8 @@ flowchart LR
 aipetcompany/
 ├── apps/
 │   ├── backend/          # NestJS API, WebSocket gateway, MCP server, agent runner
-│   └── web/              # React + PixiJS office and founder UI
+│   └── web/              # React + Three.js (React Three Fiber) office and founder UI
+│       └── public/models # GLB characters, furniture, and office rooms
 ├── packages/
 │   ├── shared/           # Shared types: events, DTOs, role definitions
 │   └── agent-sdk/        # Helper for external agents to join the office over MCP
@@ -118,13 +122,14 @@ The backend runs on `http://localhost:3000`, the MCP endpoint on `http://localho
 
 ## Roadmap
 
-- [ ] **MVP:** NestJS backend with agents, tasks, messages, and events; a 2D office showing agent states; founder chat with one agent
+- [ ] **MVP:** NestJS backend with agents, tasks, messages, and events; a 3D isometric office showing agent states; founder chat with one agent
 - [ ] Built-in agent runner with role templates (CEO, Marketing, Sales, Finance, Ops)
 - [ ] Approvals queue and standing rules
 - [ ] MCP server so external agents can join the office
 - [ ] Real tool connections (email, social, accounting)
 - [ ] Company memory, daily and weekly reports
 - [ ] Mobile approvals and notifications
+- [ ] Office editor: rearrange rooms and furniture, custom characters
 - [ ] Desktop wallpaper mode for the office
 
 ## License
