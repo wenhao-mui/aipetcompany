@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "aipetcompany": {
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}

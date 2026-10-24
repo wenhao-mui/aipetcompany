@@ -97,21 +97,48 @@ aipetcompany/
 └── README.md
 ```
 
-## Getting started (planned)
+## Local development
 
-Requirements: Node.js 20+, pnpm, Docker.
+Requirements: Node.js 20+, pnpm 10, and Docker.
+
+PostgreSQL runs in Docker. Redis is in the same Compose file for the job queue.
+
+### 1. Start PostgreSQL
+
+From the repo root:
 
 ```bash
-pnpm install
-docker compose up -d          # start PostgreSQL and Redis
-cp apps/backend/.env.example apps/backend/.env
-pnpm --filter backend prisma migrate dev
-pnpm dev                      # runs backend and web together
+docker compose up -d postgres
 ```
 
-The backend runs on `http://localhost:3000`, the MCP endpoint on `http://localhost:3000/mcp`, and the office on `http://localhost:5173`.
+That starts Postgres 16 and keeps the data in the `postgres_data` volume.
 
-### Environment variables
+| Setting | Value |
+| --- | --- |
+| Host | `localhost` |
+| Port | `5432` |
+| User | `postgres` |
+| Password | `postgres` |
+| Database | `aipetcompany` |
+
+Check that it is accepting connections:
+
+```bash
+docker compose ps
+docker compose exec postgres pg_isready -U postgres -d aipetcompany
+```
+
+Stop it with `docker compose stop postgres`. Remove the container and its data with `docker compose down -v`.
+
+The same Compose file also defines Redis on `localhost:6379`. Start it with `docker compose up -d redis` when you need the queue.
+
+### 2. Configure the backend
+
+```bash
+cp apps/backend/.env.example apps/backend/.env
+```
+
+`.env` is gitignored. `DATABASE_URL` already points at the Docker Postgres instance above.
 
 | Variable | Purpose |
 | --- | --- |
@@ -119,6 +146,15 @@ The backend runs on `http://localhost:3000`, the MCP endpoint on `http://localho
 | `REDIS_URL` | Redis connection string |
 | `JWT_SECRET` | Founder session signing key |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, ... | Model provider keys (only the ones you use) |
+
+### 3. Install and run
+
+```bash
+pnpm install
+pnpm dev
+```
+
+`pnpm dev` runs the backend and the office together. The backend listens on `http://localhost:3000`, the MCP endpoint is `http://localhost:3000/mcp`, and the office is `http://localhost:5173`.
 
 ## Roadmap
 
